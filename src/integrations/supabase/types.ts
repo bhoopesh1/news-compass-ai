@@ -14,13 +14,282 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      alerts: {
+        Row: {
+          article_id: string | null
+          category: string
+          created_at: string
+          headline: string
+          id: string
+          language: string
+          region: string
+          severity: string
+        }
+        Insert: {
+          article_id?: string | null
+          category?: string
+          created_at?: string
+          headline: string
+          id?: string
+          language?: string
+          region?: string
+          severity?: string
+        }
+        Update: {
+          article_id?: string | null
+          category?: string
+          created_at?: string
+          headline?: string
+          id?: string
+          language?: string
+          region?: string
+          severity?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "alerts_article_id_fkey"
+            columns: ["article_id"]
+            isOneToOne: false
+            referencedRelation: "articles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      article_chunks: {
+        Row: {
+          article_id: string
+          chunk_index: number
+          content: string
+          created_at: string
+          embedding: string | null
+          id: string
+        }
+        Insert: {
+          article_id: string
+          chunk_index: number
+          content: string
+          created_at?: string
+          embedding?: string | null
+          id?: string
+        }
+        Update: {
+          article_id?: string
+          chunk_index?: number
+          content?: string
+          created_at?: string
+          embedding?: string | null
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "article_chunks_article_id_fkey"
+            columns: ["article_id"]
+            isOneToOne: false
+            referencedRelation: "articles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      articles: {
+        Row: {
+          ai_summary: string | null
+          author: string | null
+          category: string
+          content: string | null
+          description: string | null
+          embedding: string | null
+          id: string
+          image_url: string | null
+          ingested_at: string
+          is_breaking: boolean
+          language: string
+          published_at: string
+          region: string
+          source: string
+          source_url: string | null
+          tags: string[]
+          title: string
+        }
+        Insert: {
+          ai_summary?: string | null
+          author?: string | null
+          category?: string
+          content?: string | null
+          description?: string | null
+          embedding?: string | null
+          id?: string
+          image_url?: string | null
+          ingested_at?: string
+          is_breaking?: boolean
+          language?: string
+          published_at?: string
+          region?: string
+          source: string
+          source_url?: string | null
+          tags?: string[]
+          title: string
+        }
+        Update: {
+          ai_summary?: string | null
+          author?: string | null
+          category?: string
+          content?: string | null
+          description?: string | null
+          embedding?: string | null
+          id?: string
+          image_url?: string | null
+          ingested_at?: string
+          is_breaking?: boolean
+          language?: string
+          published_at?: string
+          region?: string
+          source?: string
+          source_url?: string | null
+          tags?: string[]
+          title?: string
+        }
+        Relationships: []
+      }
+      conversations: {
+        Row: {
+          created_at: string
+          id: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          title?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      messages: {
+        Row: {
+          citations: Json | null
+          content: string
+          conversation_id: string
+          created_at: string
+          id: string
+          role: string
+        }
+        Insert: {
+          citations?: Json | null
+          content: string
+          conversation_id: string
+          created_at?: string
+          id?: string
+          role: string
+        }
+        Update: {
+          citations?: Json | null
+          content?: string
+          conversation_id?: string
+          created_at?: string
+          id?: string
+          role?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          display_name: string | null
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          display_name?: string | null
+          id: string
+          updated_at?: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      user_preferences: {
+        Row: {
+          alerts_enabled: boolean
+          categories: string[]
+          interests: string[]
+          languages: string[]
+          regions: string[]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          alerts_enabled?: boolean
+          categories?: string[]
+          interests?: string[]
+          languages?: string[]
+          regions?: string[]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          alerts_enabled?: boolean
+          categories?: string[]
+          interests?: string[]
+          languages?: string[]
+          regions?: string[]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      match_article_chunks: {
+        Args: {
+          category_filter?: string
+          language_filter?: string
+          match_count?: number
+          query_embedding: string
+          region_filter?: string
+        }
+        Returns: {
+          article_id: string
+          category: string
+          chunk_id: string
+          content: string
+          language: string
+          published_at: string
+          region: string
+          similarity: number
+          source: string
+          source_url: string
+          title: string
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never
