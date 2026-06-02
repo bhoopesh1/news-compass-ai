@@ -1,0 +1,9 @@
+# AXON.INTEL
+
+> AI-powered news intelligence platform with multilingual feeds, semantic search, AI summaries, and a conversational news assistant grounded in retrieved articles (RAG).
+
+## Pages
+- [Intelligence Feed](/): Personalized daily news feed with filters for region, language, category, and time range.
+- [Semantic Search](/search): Vector-embedding search across indexed articles.
+- [News Assistant](/chat): Conversational RAG assistant grounded in the indexed news corpus.
+- [Breaking Alerts](/alerts): Real-time breaking-news alerts.
