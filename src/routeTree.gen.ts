@@ -10,8 +10,12 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SearchRouteImport } from './routes/search'
+import { Route as PreferencesRouteImport } from './routes/preferences'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as ChatRouteImport } from './routes/chat'
+import { Route as AlertsRouteImport } from './routes/alerts'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ArticleIdRouteImport } from './routes/article.$id'
 import { Route as ApiChatRouteImport } from './routes/api/chat'
 import { Route as ApiPublicIngestRouteImport } from './routes/api/public/ingest'
 
@@ -20,14 +24,34 @@ const SearchRoute = SearchRouteImport.update({
   path: '/search',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PreferencesRoute = PreferencesRouteImport.update({
+  id: '/preferences',
+  path: '/preferences',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ChatRoute = ChatRouteImport.update({
+  id: '/chat',
+  path: '/chat',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AlertsRoute = AlertsRouteImport.update({
+  id: '/alerts',
+  path: '/alerts',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ArticleIdRoute = ArticleIdRouteImport.update({
+  id: '/article/$id',
+  path: '/article/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiChatRoute = ApiChatRouteImport.update({
@@ -43,45 +67,83 @@ const ApiPublicIngestRoute = ApiPublicIngestRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/alerts': typeof AlertsRoute
+  '/chat': typeof ChatRoute
   '/login': typeof LoginRoute
+  '/preferences': typeof PreferencesRoute
   '/search': typeof SearchRoute
   '/api/chat': typeof ApiChatRoute
+  '/article/$id': typeof ArticleIdRoute
   '/api/public/ingest': typeof ApiPublicIngestRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/alerts': typeof AlertsRoute
+  '/chat': typeof ChatRoute
   '/login': typeof LoginRoute
+  '/preferences': typeof PreferencesRoute
   '/search': typeof SearchRoute
   '/api/chat': typeof ApiChatRoute
+  '/article/$id': typeof ArticleIdRoute
   '/api/public/ingest': typeof ApiPublicIngestRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/alerts': typeof AlertsRoute
+  '/chat': typeof ChatRoute
   '/login': typeof LoginRoute
+  '/preferences': typeof PreferencesRoute
   '/search': typeof SearchRoute
   '/api/chat': typeof ApiChatRoute
+  '/article/$id': typeof ArticleIdRoute
   '/api/public/ingest': typeof ApiPublicIngestRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/login' | '/search' | '/api/chat' | '/api/public/ingest'
+  fullPaths:
+    | '/'
+    | '/alerts'
+    | '/chat'
+    | '/login'
+    | '/preferences'
+    | '/search'
+    | '/api/chat'
+    | '/article/$id'
+    | '/api/public/ingest'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/login' | '/search' | '/api/chat' | '/api/public/ingest'
+  to:
+    | '/'
+    | '/alerts'
+    | '/chat'
+    | '/login'
+    | '/preferences'
+    | '/search'
+    | '/api/chat'
+    | '/article/$id'
+    | '/api/public/ingest'
   id:
     | '__root__'
     | '/'
+    | '/alerts'
+    | '/chat'
     | '/login'
+    | '/preferences'
     | '/search'
     | '/api/chat'
+    | '/article/$id'
     | '/api/public/ingest'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AlertsRoute: typeof AlertsRoute
+  ChatRoute: typeof ChatRoute
   LoginRoute: typeof LoginRoute
+  PreferencesRoute: typeof PreferencesRoute
   SearchRoute: typeof SearchRoute
   ApiChatRoute: typeof ApiChatRoute
+  ArticleIdRoute: typeof ArticleIdRoute
   ApiPublicIngestRoute: typeof ApiPublicIngestRoute
 }
 
@@ -94,6 +156,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SearchRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/preferences': {
+      id: '/preferences'
+      path: '/preferences'
+      fullPath: '/preferences'
+      preLoaderRoute: typeof PreferencesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/login': {
       id: '/login'
       path: '/login'
@@ -101,11 +170,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/chat': {
+      id: '/chat'
+      path: '/chat'
+      fullPath: '/chat'
+      preLoaderRoute: typeof ChatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/alerts': {
+      id: '/alerts'
+      path: '/alerts'
+      fullPath: '/alerts'
+      preLoaderRoute: typeof AlertsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/article/$id': {
+      id: '/article/$id'
+      path: '/article/$id'
+      fullPath: '/article/$id'
+      preLoaderRoute: typeof ArticleIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/chat': {
@@ -127,9 +217,13 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AlertsRoute: AlertsRoute,
+  ChatRoute: ChatRoute,
   LoginRoute: LoginRoute,
+  PreferencesRoute: PreferencesRoute,
   SearchRoute: SearchRoute,
   ApiChatRoute: ApiChatRoute,
+  ArticleIdRoute: ArticleIdRoute,
   ApiPublicIngestRoute: ApiPublicIngestRoute,
 }
 export const routeTree = rootRouteImport
