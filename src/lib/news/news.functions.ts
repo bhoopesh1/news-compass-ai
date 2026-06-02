@@ -87,9 +87,9 @@ export const semanticSearch = createServerFn({ method: "POST" })
       const { data: rows, error } = await supabaseAdmin.rpc("match_article_chunks", {
         query_embedding: vec as unknown as string,
         match_count: 8,
-        region_filter: data.region && data.region !== "all" ? data.region : null,
-        language_filter: data.language && data.language !== "all" ? data.language : null,
-        category_filter: data.category && data.category !== "all" ? data.category : null,
+        region_filter: data.region && data.region !== "all" ? data.region : undefined,
+        language_filter: data.language && data.language !== "all" ? data.language : undefined,
+        category_filter: data.category && data.category !== "all" ? data.category : undefined,
       });
       if (error) {
         console.error("semanticSearch rpc", error);
