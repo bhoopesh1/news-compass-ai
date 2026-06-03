@@ -162,7 +162,12 @@ export async function fetchFromNewsAPI(opts: { category?: string; country?: stri
   })).filter((a: RawArticle) => a.title && a.source_url);
 }
 
-export const SEED_ARTICLES: RawArticle[] = [
+// IMPORTANT: timestamps are computed inside getSeedArticles(), not at module scope.
+// In Cloudflare Workers, Date.now() returns 0 during module initialization,
+// which would make every seed article appear at 1970-01-01 and be filtered out.
+type SeedTemplate = Omit<RawArticle, "published_at"> & { minutesAgo: number };
+
+const SEED_TEMPLATES: SeedTemplate[] = [
   {
     source: "Reuters",
     source_url: "https://example.com/seed/1",
@@ -173,7 +178,7 @@ export const SEED_ARTICLES: RawArticle[] = [
       "The Indian government announced a $4.2B expansion of deep-water port infrastructure across the Bay of Bengal coastline. Analysts say the move will reshape regional shipping lanes and reduce supply chain bottlenecks tied to Singapore and Colombo. Officials emphasized adherence to zero-carbon shipping protocols by 2030.",
     image_url: null,
     author: "Reuters Staff",
-    published_at: new Date(Date.now() - 14 * 60 * 1000).toISOString(),
+    minutesAgo: 14,
   },
   {
     source: "Dainik Jagran",
@@ -184,7 +189,7 @@ export const SEED_ARTICLES: RawArticle[] = [
       "Prime Minister inaugurated the country's largest AI and semiconductor research campus in Noida. The facility will host 12 startups, 4 research labs, and a fabrication pilot line. The announcement comes amid a global race to localize chip supply chains.",
     image_url: null,
     author: null,
-    published_at: new Date(Date.now() - 42 * 60 * 1000).toISOString(),
+    minutesAgo: 42,
   },
   {
     source: "The Hindu",
@@ -195,19 +200,18 @@ export const SEED_ARTICLES: RawArticle[] = [
       "Tamil Nadu's flagship maritime project cleared the final regulatory hurdle today. The expansion includes new berths, automated cranes, and shore-power facilities to cut emissions from docked vessels.",
     image_url: null,
     author: "Special Correspondent",
-    published_at: new Date(Date.now() - 2 * 3600 * 1000).toISOString(),
+    minutesAgo: 120,
   },
   {
     source: "Bloomberg",
     source_url: "https://example.com/seed/4",
     title: "Central Bank pivots on interest rates amid cooling inflation data",
-    description:
-      "The Reserve Bank signaled a possible rate cut by Q4, citing a 12-month low in core CPI.",
+    description: "The Reserve Bank signaled a possible rate cut by Q4, citing a 12-month low in core CPI.",
     content:
       "Markets rallied after the central bank governor hinted at a dovish pivot. Bond yields fell across the curve and real estate stocks led the rally. Analysts expect a 25bp cut at the next meeting.",
     image_url: null,
     author: "Bloomberg News",
-    published_at: new Date(Date.now() - 45 * 60 * 1000).toISOString(),
+    minutesAgo: 45,
   },
   {
     source: "TechCrunch",
@@ -218,7 +222,7 @@ export const SEED_ARTICLES: RawArticle[] = [
       "The new model, designed for offline inference, brings advanced reasoning to devices with as little as 4GB RAM. Pilot partnerships are underway with three smartphone OEMs in South Asia and Africa.",
     image_url: null,
     author: "Devin Coldewey",
-    published_at: new Date(Date.now() - 3 * 3600 * 1000).toISOString(),
+    minutesAgo: 180,
   },
   {
     source: "BBC",
@@ -229,6 +233,25 @@ export const SEED_ARTICLES: RawArticle[] = [
       "The Chips Act 2.0 includes production subsidies, R&D grants, and skilled-migration fast-tracks. Industry groups cautiously welcomed the move but warned about scaling talent quickly.",
     image_url: null,
     author: "BBC Brussels",
-    published_at: new Date(Date.now() - 6 * 3600 * 1000).toISOString(),
+    minutesAgo: 360,
   },
 ];
+
+export function getSeedArticles(): RawArticle[] {
+  const now = Date.now();
+  return SEED_TEMPLATES.map(({ minutesAgo, ...rest }) => ({
+    ...rest,
+    published_at: new Date(now - minutesAgo * 60 * 1000).toISOString(),
+  }));
+}
+
+// Back-compat: lazy proxy so existing imports of SEED_ARTICLES keep working
+// without evaluating Date.now() at module-load time.
+export const SEED_ARTICLES: RawArticle[] = new Proxy([] as RawArticle[], {
+  get(_t, prop) {
+    const arr = getSeedArticles();
+    // @ts-ignore - dynamic index into array
+    return arr[prop];
+  },
+}) as RawArticle[];
+
