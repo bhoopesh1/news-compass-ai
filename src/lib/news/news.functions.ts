@@ -152,6 +152,74 @@ export const updatePreferences = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+async function processOneArticle(a: RawArticle): Promise<"inserted" | "skipped" | "failed"> {
+  const { data: existing } = await supabaseAdmin
+    .from("articles")
+    .select("id")
+    .eq("source_url", a.source_url)
+    .maybeSingle();
+  if (existing) return "skipped";
+  try {
+    const [cls, summary] = await Promise.all([
+      classifyArticle({ title: a.title, description: a.description }),
+      summarizeArticle({ title: a.title, description: a.description, content: a.content }),
+    ]);
+    const vec = await embed(`${a.title}\n${summary}`);
+    const { data: row, error: insErr } = await supabaseAdmin
+      .from("articles")
+      .insert({
+        source: a.source,
+        source_url: a.source_url,
+        title: a.title,
+        description: a.description,
+        content: a.content,
+        ai_summary: summary,
+        category: cls.category,
+        region: cls.region,
+        language: cls.language,
+        tags: cls.tags,
+        image_url: a.image_url,
+        author: a.author,
+        is_breaking: cls.isBreaking,
+        published_at: a.published_at,
+        embedding: vec as unknown as any,
+      })
+      .select("id")
+      .single();
+    if (insErr || !row) {
+      console.warn("insert article failed", insErr);
+      return "failed";
+    }
+    // Chunk embeddings in parallel
+    const chunks = chunkText([a.title, summary, a.content ?? a.description ?? ""].filter(Boolean).join("\n\n"));
+    const chunkVecs = await Promise.all(chunks.map((c) => embed(c)));
+    if (chunks.length) {
+      await supabaseAdmin.from("article_chunks").insert(
+        chunks.map((content, i) => ({
+          article_id: row.id,
+          chunk_index: i,
+          content,
+          embedding: chunkVecs[i] as unknown as any,
+        })),
+      );
+    }
+    if (cls.isBreaking) {
+      await supabaseAdmin.from("alerts").insert({
+        article_id: row.id,
+        headline: a.title,
+        region: cls.region,
+        language: cls.language,
+        category: cls.category,
+        severity: "breaking",
+      });
+    }
+    return "inserted";
+  } catch (e) {
+    console.warn("process article failed", e);
+    return "failed";
+  }
+}
+
 export const ingestNews = createServerFn({ method: "POST" })
   .inputValidator((i) => z.object({ useSeed: z.boolean().optional() }).parse(i))
   .handler(async ({ data }) => {
@@ -159,82 +227,26 @@ export const ingestNews = createServerFn({ method: "POST" })
     if (!data.useSeed && process.env.NEWSAPI_KEY) {
       const countries = ["us", "in", "gb"];
       const categories = ["general", "technology", "business"];
-      for (const c of countries) {
-        for (const cat of categories) {
-          raw = raw.concat(await fetchFromNewsAPI({ country: c, category: cat, pageSize: 5 }));
-        }
-      }
+      const batches = await Promise.all(
+        countries.flatMap((c) =>
+          categories.map((cat) => fetchFromNewsAPI({ country: c, category: cat, pageSize: 5 })),
+        ),
+      );
+      raw = batches.flat();
     }
     if (raw.length === 0) raw = SEED_ARTICLES;
 
+    // Process all articles in parallel so we stay within Worker wall-time limits.
+    const results = await Promise.allSettled(raw.map(processOneArticle));
     let inserted = 0;
     let skipped = 0;
-    for (const a of raw) {
-      const { data: existing } = await supabaseAdmin
-        .from("articles")
-        .select("id")
-        .eq("source_url", a.source_url)
-        .maybeSingle();
-      if (existing) {
-        skipped++;
-        continue;
-      }
-      try {
-        const [cls, summary] = await Promise.all([
-          classifyArticle({ title: a.title, description: a.description }),
-          summarizeArticle({ title: a.title, description: a.description, content: a.content }),
-        ]);
-        const embeddingText = `${a.title}\n${summary}`;
-        const vec = await embed(embeddingText);
-        const { data: row, error: insErr } = await supabaseAdmin
-          .from("articles")
-          .insert({
-            source: a.source,
-            source_url: a.source_url,
-            title: a.title,
-            description: a.description,
-            content: a.content,
-            ai_summary: summary,
-            category: cls.category,
-            region: cls.region,
-            language: cls.language,
-            tags: cls.tags,
-            image_url: a.image_url,
-            author: a.author,
-            is_breaking: cls.isBreaking,
-            published_at: a.published_at,
-            embedding: vec as unknown as any,
-          })
-          .select("id")
-          .single();
-        if (insErr || !row) {
-          console.warn("insert article failed", insErr);
-          continue;
-        }
-        const chunks = chunkText([a.title, summary, a.content ?? a.description ?? ""].filter(Boolean).join("\n\n"));
-        for (let i = 0; i < chunks.length; i++) {
-          const cVec = await embed(chunks[i]);
-          await supabaseAdmin.from("article_chunks").insert({
-            article_id: row.id,
-            chunk_index: i,
-            content: chunks[i],
-            embedding: cVec as unknown as any,
-          });
-        }
-        if (cls.isBreaking) {
-          await supabaseAdmin.from("alerts").insert({
-            article_id: row.id,
-            headline: a.title,
-            region: cls.region,
-            language: cls.language,
-            category: cls.category,
-            severity: "breaking",
-          });
-        }
-        inserted++;
-      } catch (e) {
-        console.warn("process article failed", e);
-      }
+    let failed = 0;
+    for (const r of results) {
+      if (r.status === "fulfilled") {
+        if (r.value === "inserted") inserted++;
+        else if (r.value === "skipped") skipped++;
+        else failed++;
+      } else failed++;
     }
-    return { inserted, skipped, total: raw.length };
+    return { inserted, skipped, failed, total: raw.length };
   });
