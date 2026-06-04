@@ -101,8 +101,7 @@ export async function verifyResourceOwnership(
     if (resourceType === "preference") {
       const { data, error } = await supabaseAdmin
         .from("user_preferences")
-        .select("id")
-        .eq("id", resourceId)
+        .select("user_id")
         .eq("user_id", userId)
         .single();
       return !error && !!data;
