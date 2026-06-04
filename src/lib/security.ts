@@ -24,12 +24,12 @@ const DEFAULT_RATE_LIMIT: RateLimitConfig = {
   maxRequests: 60,
 };
 
-const API_RATE_LIMIT: RateLimitConfig = {
+export const API_RATE_LIMIT: RateLimitConfig = {
   windowMs: 60 * 1000, // 1 minute
   maxRequests: 30,
 };
 
-const INGEST_RATE_LIMIT: RateLimitConfig = {
+export const INGEST_RATE_LIMIT: RateLimitConfig = {
   windowMs: 60 * 60 * 1000, // 1 hour
   maxRequests: 10,
 };
